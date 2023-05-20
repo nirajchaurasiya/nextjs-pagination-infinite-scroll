@@ -1,17 +1,18 @@
 import Link from 'next/link'
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 export default function Home({ data }) {
-  const [datas, setDatas] = useState(data.products)
+  const [datas, setDatas] = useState(data?.products)
   const [count, setCount] = useState(5)
-  const [currDatas, setCurrDatas] = useState(datas.slice(0, count));
+  const [currDatas, setCurrDatas] = useState(datas?.slice(0, count));
   const fetchData = () => {
     setTimeout(() => {
-      const infiniteScroll = datas.slice(count, count + 5)
+      const infiniteScroll = datas?.slice(count, count + 5)
       setCurrDatas([...currDatas, ...infiniteScroll]);
       setCount(count + 5);
     }, 1000);
   }
+
   return (
     <section className="text-gray-600 body-font">
       <div className="container px-5 py-24 mx-auto">
@@ -26,9 +27,9 @@ export default function Home({ data }) {
         </div>
 
         <InfiniteScroll
-          dataLength={currDatas.length} //This is important field to render the next data
+          dataLength={currDatas?.length || 1} //This is important field to render the next data
           next={fetchData}
-          hasMore={count < data.products.length}
+          hasMore={count < data?.products.length}
           loader={<div style={{ textAlign: "center", margin: "2rem 2rem" }}>loading...</div>}
           endMessage={
             <p style={{ textAlign: 'center' }}>
@@ -36,7 +37,7 @@ export default function Home({ data }) {
             </p>
           }
         ><div className="flex flex-wrap w-full">
-            {currDatas && currDatas?.map((e, index) => {
+            {currDatas !== [] && currDatas?.map((e, index) => {
               return (
                 <div key={index} className="xl:w-1/4 md:w-1/2 sm:w-full border border-red-100">
                   <div className="bg-gray-100 p-6 rounded-lg">
@@ -52,14 +53,6 @@ export default function Home({ data }) {
                 </div>
               )
             })}
-
-
-
-
-
-
-
-
           </div>
 
         </InfiniteScroll>
@@ -70,8 +63,20 @@ export default function Home({ data }) {
 
   )
 }
-export const getStaticProps = async () => {
-  const getUsers = await fetch('https://dummyjson.com/products?limit=0')
+export async function getServerSideProps() {
+
+  const requestOptions = {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+    },
+  }
+
+  const getUsers = await fetch('https://dummyjson.com/products?limit=0', requestOptions)
+
+  if (!getUsers.ok) {
+    throw new Error(`Error! status: ${getUsers.status}`);
+  }
   const data = await getUsers.json();
   return {
     props: {
